@@ -1,447 +1,133 @@
 <!doctype html>
 <html lang="th">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>BHH – Flood Damage Dashboard (Medicine & Supplies)</title>
-  <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-  <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
-  <style>
-    :root{
-      --bg:#0b1020; --card:#121a33; --muted:#9aa4c3; --text:#e9ecf8; --border:#22305f; --accent:#6ea8fe;
-      --good:#35c759; --warn:#ffcc00; --bad:#ff3b30;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:radial-gradient(1200px 800px at 20% 0%, rgba(110,168,254,.18), transparent 55%), var(--bg); color:var(--text);}
-    .wrap{max-width:1300px;margin:0 auto;padding:22px 16px 40px;}
-    h1{font-size:20px;margin:0 0 4px 0;}
-    .sub{color:var(--muted);font-size:13px}
-    .topbar{display:flex;gap:12px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}
-    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:rgba(110,168,254,.12);border:1px solid rgba(110,168,254,.22);color:var(--text);font-size:12px}
-    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
-    .card{background:linear-gradient(180deg, rgba(18,26,51,.92), rgba(18,26,51,.75)); border:1px solid rgba(34,48,95,.75); border-radius:16px; padding:14px; box-shadow:0 10px 30px rgba(0,0,0,.25);}
-    .kpi .label{color:var(--muted);font-size:12px}
-    .kpi .value{font-size:26px;font-weight:700;margin-top:6px}
-    .kpi .note{color:var(--muted);font-size:12px;margin-top:6px;line-height:1.4}
-    .span-3{grid-column:span 3}
-    .span-4{grid-column:span 4}
-    .span-5{grid-column:span 5}
-    .span-6{grid-column:span 6}
-    .span-7{grid-column:span 7}
-    .span-8{grid-column:span 8}
-    .span-12{grid-column:span 12}
-    .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    select, input{background:rgba(11,16,32,.55); border:1px solid rgba(34,48,95,.9); color:var(--text); border-radius:10px; padding:8px 10px; outline:none; font-size:12px}
-    select{min-width:190px}
-    input{min-width:260px}
-    .btn{background:rgba(110,168,254,.16); border:1px solid rgba(110,168,254,.35); color:var(--text); border-radius:10px; padding:9px 12px; cursor:pointer; font-size:12px}
-    .btn:hover{background:rgba(110,168,254,.22)}
-    .chart{height:380px}
-    .chart.small{height:320px}
-    .note{color:var(--muted);font-size:12px;line-height:1.45}
-    .divider{height:1px;background:rgba(34,48,95,.6);margin:10px 0}
-    .legendHint{color:var(--muted);font-size:12px;margin-top:8px}
-    /* DataTable */
-    table.dataTable{color:var(--text)!important}
-    .dataTables_wrapper .dataTables_filter input{color:var(--text)}
-    .dataTables_wrapper .dataTables_length select{color:var(--text)}
-    .dataTables_wrapper .dataTables_info,.dataTables_wrapper .dataTables_paginate{color:var(--muted)!important}
-    .dataTables_wrapper .dataTables_paginate .paginate_button{color:var(--text)!important}
-    .dataTables_wrapper .dataTables_paginate .paginate_button.current{background:rgba(110,168,254,.25)!important;border:1px solid rgba(110,168,254,.35)!important}
-    @media (max-width: 920px){
-      .span-3,.span-4,.span-5,.span-6,.span-7,.span-8{grid-column:span 12}
-      input{min-width:220px}
-      select{min-width:220px}
-    }
-  </style>
+<meta charset="utf-8">
+<title>BHH Flood Damage Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+
+<style>
+body{font-family:system-ui;background:#0b1020;color:#e9ecf8;margin:0}
+.container{max-width:1300px;margin:auto;padding:20px}
+.tabs{display:flex;gap:10px;margin-bottom:20px}
+.tab{padding:10px 18px;border-radius:10px;cursor:pointer;background:#1a244a}
+.tab.active{background:#6ea8fe;color:#000;font-weight:700}
+.card{background:#121a33;border-radius:14px;padding:16px;margin-bottom:20px}
+h2{margin-top:0}
+table.dataTable{color:#e9ecf8}
+</style>
 </head>
+
 <body>
-  <div class="wrap">
-    <div class="topbar">
-      <div>
-        <h1>Dashboard: มูลค่าความเสียหายจากน้ำท่วม (Medicine & Supplies)</h1>
-        <div class="sub" id="subtitle">โหลดข้อมูล…</div>
-        <div class="sub">คลิกแถบ/Legend ในกราฟเพื่อกรองข้อมูล • ตารางด้านล่างรองรับค้นหา/เรียงลำดับ</div>
-      </div>
-      <div class="controls card" style="padding:12px 12px;">
-        <span class="pill" id="pillScope">Scope: All</span>
-        <select id="sourceSelect" multiple size="4" title="เลือกแหล่งข้อมูล (multi-select)"></select>
-        <select id="damageSelect" multiple size="4" title="เลือกประเภทความเสียหาย (multi-select)"></select>
-        <select id="unitSelect" multiple size="4" title="เลือกหน่วยนับ (multi-select)"></select>
-        <input id="searchBox" type="text" placeholder="ค้นหา: ชื่อยา / รหัส / lot" />
-        <button class="btn" id="resetBtn">ล้างตัวกรอง</button>
-      </div>
-    </div>
+<div class="container">
 
-    <div class="grid">
-      <div class="card kpi span-3">
-        <div class="label">มูลค่าความเสียหาย (รวม)</div>
-        <div class="value" id="kpiTotal">—</div>
-        <div class="note" id="kpiTotalNote"></div>
-      </div>
-      <div class="card kpi span-3">
-        <div class="label">มูลค่าเฉพาะ GR+ตู้เย็น+PHR+DSP</div>
-        <div class="value" id="kpiExcl">—</div>
-        <div class="note">เทียบกับยอดรวมในไฟล์หลัก</div>
-      </div>
-      <div class="card kpi span-3">
-        <div class="label">จำนวนรายการ (rows)</div>
-        <div class="value" id="kpiRows">—</div>
-        <div class="note" id="kpiRowsNote"></div>
-      </div>
-      <div class="card kpi span-3">
-        <div class="label">จำนวนรหัสสินค้าไม่ซ้ำ</div>
-        <div class="value" id="kpiItems">—</div>
-        <div class="note">นับจาก item_code ในชุดข้อมูลที่กรองแล้ว</div>
-      </div>
+<h1>มูลค่าความเสียหายจากน้ำท่วม</h1>
+<p>แยกยา / เวชภัณฑ์ เพื่อการตัดสินใจระดับผู้บริหาร</p>
 
-      <div class="card span-6">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
-          <div>
-            <div style="font-weight:650">มูลค่าตามประเภทความเสียหาย</div>
-            <div class="legendHint">คลิกแท่งเพื่อกรอง (damage type)</div>
-          </div>
-          <span class="pill" id="pillFiltered">Filtered: 0 rows</span>
-        </div>
-        <div id="barDamage" class="chart"></div>
-      </div>
+<!-- Tabs -->
+<div class="tabs">
+  <div class="tab active" data-tab="drug">💊 ยา</div>
+  <div class="tab" data-tab="supply">🧰 เวชภัณฑ์</div>
+</div>
 
-      <div class="card span-6">
-        <div style="font-weight:650">Top 15 รายการมูลค่าสูงสุด</div>
-        <div class="note">ช่วยโฟกัสมาตรการ: รายการราคาแพง/ผลกระทบสูง</div>
-        <div id="barTopItems" class="chart"></div>
-      </div>
+<!-- ================= TAB: DRUG ================= -->
+<div id="tab-drug">
 
-      <div class="card span-6">
-        <div style="font-weight:650">Heatmap: Drug Group × ประเภทความเสียหาย (ตารางสรุป)</div>
-        <div class="note">มุมมองระดับผู้บริหาร: กลุ่มยาใดได้รับผลกระทบจากเหตุการณ์ใดมากที่สุด</div>
-        <div id="heatDrugGroup" class="chart small"></div>
-      </div>
-
-      <div class="card span-6">
-        <div style="font-weight:650">Stacked Bar: สัดส่วนความเสียหายตาม Drug Group</div>
-        <div class="note">ดูได้ง่ายว่าแต่ละกลุ่ม “เสียหายจากเหตุการณ์ใด” เป็นหลัก</div>
-        <div id="stackDrugGroup" class="chart small"></div>
-      </div>
-
-      <div class="card span-5">
-        <div style="font-weight:650">สรุป “จุดเสี่ยง” (Quick insights)</div>
-        <div class="divider"></div>
-        <div class="note" id="insights">กำลังประมวลผล…</div>
-        <div class="divider"></div>
-        <div class="note">
-          แนวทางนำเสนอผู้บริหาร (แนะนำ):
-          <ul>
-            <li>มาตรการป้องกันซ้ำ: ระบบสำรองไฟ/monitor ตู้เย็น + SOP ตรวจอุณหภูมิ + logging</li>
-            <li>แผน BCP: จุดเก็บสำรอง + ย้ายของก่อนน้ำท่วม + แผนขนย้ายเวชภัณฑ์</li>
-            <li>เน้นรายการมูลค่าสูง: วัคซีน/ยาต้องแช่เย็น/ยาราคาแพง</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="card span-7">
-        <div style="font-weight:650">รายการละเอียด (Interactive Table)</div>
-        <div class="note">ค้นหา/กรองเพิ่มเติมได้จากกล่อง Search หรือ DataTable ด้านบน</div>
-        <div class="divider"></div>
-        <table id="tbl" class="display" style="width:100%"></table>
-      </div>
-
-    </div>
+  <div class="card">
+    <h2>📊 สรุปความเสียหายกลุ่มยา (ตามรายงานทางการ)</h2>
+    <table border="1" width="100%" cellpadding="6">
+      <thead>
+        <tr>
+          <th>Drug Group</th>
+          <th>GR</th>
+          <th>ตู้เย็นไม่ทำงาน</th>
+          <th>PHR น้ำท่วม</th>
+          <th>DSP น้ำท่วม</th>
+          <th>DXP น้ำท่วม</th>
+          <th>รวม</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>INJECTION</td><td>17,334.01</td><td>2,249,355.16</td><td>1,433,402.59</td><td>535,191.03</td><td>21,494.89</td><td>4,256,777.68</td></tr>
+        <tr><td>TABLET</td><td>51,551.34</td><td>4,228.25</td><td>5,452,979.15</td><td>265,229.38</td><td>1,218.83</td><td>5,774,206.95</td></tr>
+        <tr><td>EXTERNAL USE</td><td>5,602.83</td><td>55,681.91</td><td>1,058,973.73</td><td>6,702.65</td><td>525.22</td><td>1,127,486.34</td></tr>
+        <tr style="font-weight:700;background:#1a244a">
+          <td>ยอดรวม</td>
+          <td>94,841.63</td>
+          <td>5,006,653.70</td>
+          <td>8,777,139.15</td>
+          <td>862,783.53</td>
+          <td>32,582.01</td>
+          <td>14,741,418.02</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 
+  <div class="card">
+    <h2>📋 รายการยาละเอียด</h2>
+    <table id="drugTable" class="display" width="100%"></table>
+  </div>
+
+</div>
+
+<!-- ================= TAB: SUPPLY ================= -->
+<div id="tab-supply" style="display:none">
+
+  <div class="card">
+    <h2>🧰 เวชภัณฑ์ที่ได้รับความเสียหาย</h2>
+    <table id="supplyTable" class="display" width="100%"></table>
+  </div>
+
+</div>
+
+</div>
+
 <script>
-const fmtTHB = (v)=> new Intl.NumberFormat('th-TH',{style:'currency',currency:'THB',maximumFractionDigits:2}).format(v||0);
-const fmtInt = (v)=> new Intl.NumberFormat('th-TH').format(v||0);
+let RAW;
 
-let RAW=null;
-let FILTER={
-  sources: new Set(),
-  damageTypes: new Set(),
-  units: new Set(),
-  q: "",
-};
+fetch('./data.json').then(r=>r.json()).then(j=>{
+  RAW=j;
 
-function uniq(arr){ return Array.from(new Set(arr)); }
+  const drug = RAW.rows.filter(r=>r.category==="Drug");
+  const supply = RAW.rows.filter(r=>r.category==="Supply");
 
-function applyFilter(rows){
-  const q = (FILTER.q||"").toLowerCase().trim();
-  return rows.filter(r=>{
-    if(FILTER.sources.size && !FILTER.sources.has(r.source)) return false;
-    if(FILTER.damageTypes.size && !FILTER.damageTypes.has(r.damage_type)) return false;
-    if(FILTER.units.size && !FILTER.units.has(r.unit)) return false;
-    if(q){
-      const hay = `${r.item_code||""} ${r.item_name||""} ${r.lot||""} ${r.source||""}`.toLowerCase();
-      if(!hay.includes(q)) return false;
-    }
-    return true;
+  $('#drugTable').DataTable({
+    data:drug,
+    columns:[
+      {title:"Damage",data:"damage_type"},
+      {title:"Item",data:"item_name"},
+      {title:"Qty",data:"qty"},
+      {title:"Value",data:"total_value"}
+    ],
+    order:[[3,'desc']]
   });
-}
 
-function groupSum(rows, key){
-  const m = new Map();
-  for(const r of rows){
-    const k = r[key] ?? "(blank)";
-    m.set(k, (m.get(k)||0) + (r.total_value||0));
+  $('#supplyTable').DataTable({
+    data:supply,
+    columns:[
+      {title:"Damage",data:"damage_type"},
+      {title:"Item",data:"item_name"},
+      {title:"Qty",data:"qty"},
+      {title:"Value",data:"total_value"}
+    ],
+    order:[[3,'desc']]
+  });
+});
+
+// Tab switch
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('tab-drug').style.display = t.dataset.tab==="drug"?"block":"none";
+    document.getElementById('tab-supply').style.display = t.dataset.tab==="supply"?"block":"none";
   }
-  return Array.from(m.entries()).map(([k,v])=>({k,v})).sort((a,b)=>b.v-a.v);
-}
-
-function topNItems(rows, n=15){
-  const m = new Map();
-  for(const r of rows){
-    const k = `${r.item_name} • ${r.item_code||""}`.trim();
-    m.set(k, (m.get(k)||0) + (r.total_value||0));
-  }
-  return Array.from(m.entries()).map(([k,v])=>({k,v})).sort((a,b)=>b.v-a.v).slice(0,n);
-}
-
-function setSubtitle(){
-  const k = RAW.kpi;
-  const dt = new Date(k.generated_at);
-  document.getElementById('subtitle').textContent =
-    `อัปเดตข้อมูล: ${dt.toLocaleString('th-TH')} • Currency: ${k.currency}`;
-}
-
-function renderKPIs(filteredRows){
-  const totalFiltered = filteredRows.reduce((s,r)=>s+(r.total_value||0),0);
-  const totalAll = RAW.rows.reduce((s,r)=>s+(r.total_value||0),0);
-
-  document.getElementById('kpiTotal').textContent = fmtTHB(totalFiltered);
-  document.getElementById('kpiTotalNote').textContent =
-    `รวมทั้งเวชภัณฑ์ (SWT) + DXP (Total ทั้งหมดใน dataset = ${fmtTHB(totalAll)})`;
-
-  document.getElementById('kpiExcl').textContent = fmtTHB(
-    filteredRows.filter(r=>r.damage_type!=="รายการใน DXP น้ำท่วม").reduce((s,r)=>s+(r.total_value||0),0)
-  );
-
-  document.getElementById('kpiRows').textContent = fmtInt(filteredRows.length);
-  document.getElementById('kpiRowsNote').textContent = `จากทั้งหมด ${fmtInt(RAW.rows.length)} rows`;
-
-  const distinct = new Set(filteredRows.map(r=>r.item_code).filter(Boolean)).size;
-  document.getElementById('kpiItems').textContent = fmtInt(distinct);
-  document.getElementById('pillFiltered').textContent = `Filtered: ${fmtInt(filteredRows.length)} rows`;
-}
-
-function renderBarDamage(filteredRows){
-  const g = groupSum(filteredRows, "damage_type");
-  const x = g.map(d=>d.k);
-  const y = g.map(d=>d.v);
-
-  const trace = {type:'bar', x, y, hovertemplate:'%{x}<br>%{y:,.2f} THB<extra></extra>'};
-  const layout = {
-    margin:{l:50,r:10,t:10,b:90},
-    paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
-    font:{color:'#e9ecf8'},
-    yaxis:{tickformat:',.0f', gridcolor:'rgba(34,48,95,.35)'},
-    xaxis:{tickangle:-25}
-  };
-  Plotly.newPlot('barDamage',[trace],layout,{displayModeBar:false,responsive:true});
-
-  const el = document.getElementById('barDamage');
-  el.on('plotly_click', (ev)=>{
-    const dmg = ev.points?.[0]?.x;
-    if(!dmg) return;
-    if(FILTER.damageTypes.has(dmg)) FILTER.damageTypes.delete(dmg);
-    else FILTER.damageTypes.add(dmg);
-    syncControls();
-    rerender();
-  });
-}
-
-function renderBarTopItems(filteredRows){
-  const top = topNItems(filteredRows, 15);
-  const x = top.map(d=>d.v).reverse();
-  const y = top.map(d=>d.k).reverse();
-  const trace = {type:'bar', orientation:'h', x, y, hovertemplate:'%{y}<br>%{x:,.2f} THB<extra></extra>'};
-  const layout = {
-    margin:{l:220,r:10,t:10,b:40},
-    paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
-    font:{color:'#e9ecf8'},
-    xaxis:{tickformat:',.0f', gridcolor:'rgba(34,48,95,.35)'}
-  };
-  Plotly.newPlot('barTopItems',[trace],layout,{displayModeBar:false,responsive:true});
-}
-
-function renderInsights(filteredRows){
-  const total = filteredRows.reduce((s,r)=>s+(r.total_value||0),0);
-  const byDamage = groupSum(filteredRows, "damage_type");
-  const topDamage = byDamage.slice(0,3).map(d=>`• ${d.k}: ${fmtTHB(d.v)}`).join('<br>');
-  const bySource = groupSum(filteredRows, "source").slice(0,3).map(d=>`• ${d.k}: ${fmtTHB(d.v)}`).join('<br>');
-
-  document.getElementById('insights').innerHTML = `
-    <div><b>มูลค่ารวม (ตามตัวกรอง):</b> ${fmtTHB(total)}</div>
-    <div class="divider"></div>
-    <div><b>Top 3 ประเภทความเสียหาย:</b><br>${topDamage}</div>
-    <div class="divider"></div>
-    <div><b>Top 3 แหล่งข้อมูล (Source):</b><br>${bySource}</div>
-    <div class="divider"></div>
-    <div><b>คำแนะนำเชิงระบบ:</b> ถ้ากราฟ “ตู้เย็นไม่ทำงาน” สูง → prioritise ระบบสำรองไฟ/monitor ตู้เย็น + audit log</div>
-  `;
-}
-
-function renderHeatDrugGroup(){
-  const t = RAW.drug_group_table;
-  const cols = t.columns.slice(1); // damage columns
-  const rows = t.rows.map(r=>r["Drug Group"]);
-  const z = t.rows.map(r=>cols.map(c=>r[c]||0));
-
-  const trace = {
-    type:'heatmap',
-    x: cols,
-    y: rows,
-    z: z,
-    hovertemplate:'%{y}<br>%{x}<br>%{z:,.2f} THB<extra></extra>',
-    colorbar:{tickformat:',.0f'}
-  };
-  const layout = {
-    margin:{l:140,r:20,t:10,b:80},
-    paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
-    font:{color:'#e9ecf8'},
-    xaxis:{tickangle:-20}
-  };
-  Plotly.newPlot('heatDrugGroup',[trace],layout,{displayModeBar:false,responsive:true});
-}
-
-function renderStackDrugGroup(){
-  const t = RAW.drug_group_table;
-  const cols = t.columns.slice(1); // damage columns
-  const groups = t.rows.map(r=>r["Drug Group"]);
-
-  const traces = cols.map(c=>({
-    type:'bar',
-    orientation:'h',
-    y: groups,
-    x: t.rows.map(r=>r[c]||0),
-    name: c,
-    hovertemplate:`%{y}<br>${c}<br>%{x:,.2f} THB<extra></extra>`
-  }));
-
-  const layout = {
-    barmode:'stack',
-    margin:{l:140,r:20,t:10,b:40},
-    paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
-    font:{color:'#e9ecf8'},
-    xaxis:{tickformat:',.0f', gridcolor:'rgba(34,48,95,.35)'},
-    legend:{orientation:'h', y:1.15, x:0}
-  };
-  Plotly.newPlot('stackDrugGroup', traces, layout, {displayModeBar:false, responsive:true});
-}
-
-let DATA_TABLE=null;
-function renderTable(filteredRows){
-  const columns = [
-    {title:"Damage Type", data:"damage_type"},
-    {title:"Source Sheet", data:"source"},
-    {title:"Item Code", data:"item_code"},
-    {title:"Item Name", data:"item_name"},
-    {title:"Lot", data:"lot"},
-    {title:"Exp", data:"exp"},
-    {title:"Qty", data:"qty", render:(d)=> fmtInt(d)},
-    {title:"Unit", data:"unit"},
-    {title:"Avg Cost", data:"avg_cost", render:(d)=> (d==null? "" : d.toLocaleString('th-TH',{maximumFractionDigits:2}))},
-    {title:"Total (THB)", data:"total_value", render:(d)=> (d||0).toLocaleString('th-TH',{maximumFractionDigits:2})},
-  ];
-
-  if(DATA_TABLE){
-    DATA_TABLE.clear();
-    DATA_TABLE.rows.add(filteredRows);
-    DATA_TABLE.draw();
-    return;
-  }
-  DATA_TABLE = $('#tbl').DataTable({
-    data: filteredRows,
-    columns,
-    pageLength: 10,
-    order: [[9, 'desc']],
-    dom: 'lfrtip'
-  });
-}
-
-function rerender(){
-  const filtered = applyFilter(RAW.rows);
-  renderKPIs(filtered);
-  renderBarDamage(filtered);
-  renderBarTopItems(filtered);
-  renderInsights(filtered);
-  renderTable(filtered);
-}
-
-function syncControls(){
-  const srcSel = document.getElementById('sourceSelect');
-  for(const opt of srcSel.options){
-    opt.selected = FILTER.sources.has(opt.value);
-  }
-  const dmgSel = document.getElementById('damageSelect');
-  for(const opt of dmgSel.options){
-    opt.selected = FILTER.damageTypes.has(opt.value);
-  }
-  const unitSel = document.getElementById('unitSelect');
-  for(const opt of unitSel.options){
-    opt.selected = FILTER.units.has(opt.value);
-  }
-  document.getElementById('searchBox').value = FILTER.q || "";
-
-  const parts = [];
-  if(FILTER.sources.size) parts.push(`${FILTER.sources.size} source`);
-  if(FILTER.damageTypes.size) parts.push(`${FILTER.damageTypes.size} damage type`);
-  if(FILTER.units.size) parts.push(`${FILTER.units.size} unit`);
-  document.getElementById('pillScope').textContent = parts.length ? `Scope: ${parts.join(' • ')}` : "Scope: All";
-}
-
-function initControls(){
-  const srcSel = document.getElementById('sourceSelect');
-  const dmgSel = document.getElementById('damageSelect');
-  const unitSel = document.getElementById('unitSelect');
-
-  const srcList = uniq(RAW.rows.map(r=>r.source)).sort();
-  srcSel.innerHTML = srcList.map(s=> `<option value="${s}">${s}</option>`).join('');
-
-  const dmgList = uniq(RAW.rows.map(r=>r.damage_type)).sort();
-  dmgSel.innerHTML = dmgList.map(d=> `<option value="${d}">${d}</option>`).join('');
-
-  const unitList = uniq(RAW.rows.map(r=>r.unit).filter(Boolean)).sort();
-  unitSel.innerHTML = unitList.map(u=> `<option value="${u}">${u}</option>`).join('');
-
-  srcSel.addEventListener('change', ()=>{
-    FILTER.sources = new Set(Array.from(srcSel.selectedOptions).map(o=>o.value));
-    rerender();
-  });
-
-  dmgSel.addEventListener('change', ()=>{
-    FILTER.damageTypes = new Set(Array.from(dmgSel.selectedOptions).map(o=>o.value));
-    rerender();
-  });
-  unitSel.addEventListener('change', ()=>{
-    FILTER.units = new Set(Array.from(unitSel.selectedOptions).map(o=>o.value));
-    rerender();
-  });
-  document.getElementById('searchBox').addEventListener('input', (e)=>{
-    FILTER.q = e.target.value || "";
-    rerender();
-  });
-  document.getElementById('resetBtn').addEventListener('click', ()=>{
-    FILTER.sources = new Set();
-    FILTER.damageTypes = new Set();
-    FILTER.units = new Set();
-    FILTER.q = "";
-    syncControls();
-    rerender();
-  });
-}
-
-async function boot(){
-  const res = await fetch('./data.json');
-  RAW = await res.json();
-  setSubtitle();
-  initControls();
-  syncControls();
-  renderHeatDrugGroup();
-  renderStackDrugGroup();
-  rerender();
-}
-boot();
+});
 </script>
+
 </body>
 </html>
