@@ -1,133 +1,689 @@
 <!doctype html>
 <html lang="th">
 <head>
-<meta charset="utf-8">
-<title>BHH Flood Damage Dashboard</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
-<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BHH – Flood Damage Dashboard (Drug & Supply)</title>
 
-<style>
-body{font-family:system-ui;background:#0b1020;color:#e9ecf8;margin:0}
-.container{max-width:1300px;margin:auto;padding:20px}
-.tabs{display:flex;gap:10px;margin-bottom:20px}
-.tab{padding:10px 18px;border-radius:10px;cursor:pointer;background:#1a244a}
-.tab.active{background:#6ea8fe;color:#000;font-weight:700}
-.card{background:#121a33;border-radius:14px;padding:16px;margin-bottom:20px}
-h2{margin-top:0}
-table.dataTable{color:#e9ecf8}
-</style>
+  <!-- libs -->
+  <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
+  <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#0b1020; --card:#121a33; --muted:#9aa4c3; --text:#e9ecf8; --border:#22305f; --accent:#6ea8fe;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:radial-gradient(1200px 800px at 20% 0%, rgba(110,168,254,.18), transparent 55%), var(--bg);
+      color:var(--text);
+    }
+    .wrap{max-width:1320px;margin:0 auto;padding:22px 16px 44px;}
+    h1{font-size:20px;margin:0 0 4px 0;}
+    .sub{color:var(--muted);font-size:13px;line-height:1.4}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 10px}
+    .tabBtn{
+      border:1px solid rgba(34,48,95,.75);
+      background:rgba(18,26,51,.85);
+      color:var(--text);
+      padding:10px 14px;
+      border-radius:999px;
+      cursor:pointer;
+      font-size:13px;
+      user-select:none;
+    }
+    .tabBtn.active{
+      background:rgba(110,168,254,.22);
+      border:1px solid rgba(110,168,254,.45);
+      font-weight:700;
+    }
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+    .card{
+      background:linear-gradient(180deg, rgba(18,26,51,.92), rgba(18,26,51,.75));
+      border:1px solid rgba(34,48,95,.75);
+      border-radius:16px;
+      padding:14px;
+      box-shadow:0 10px 30px rgba(0,0,0,.25);
+    }
+    .span-3{grid-column:span 3}
+    .span-4{grid-column:span 4}
+    .span-5{grid-column:span 5}
+    .span-6{grid-column:span 6}
+    .span-7{grid-column:span 7}
+    .span-8{grid-column:span 8}
+    .span-12{grid-column:span 12}
+    .kpi .label{color:var(--muted);font-size:12px}
+    .kpi .value{font-size:26px;font-weight:800;margin-top:6px}
+    .kpi .note{color:var(--muted);font-size:12px;margin-top:6px;line-height:1.4}
+    .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    select, input{
+      background:rgba(11,16,32,.55);
+      border:1px solid rgba(34,48,95,.9);
+      color:var(--text);
+      border-radius:10px;
+      padding:8px 10px;
+      outline:none;
+      font-size:12px
+    }
+    select{min-width:210px}
+    input{min-width:260px}
+    .btn{
+      background:rgba(110,168,254,.16);
+      border:1px solid rgba(110,168,254,.35);
+      color:var(--text);
+      border-radius:10px;
+      padding:9px 12px;
+      cursor:pointer;
+      font-size:12px
+    }
+    .btn:hover{background:rgba(110,168,254,.22)}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:rgba(110,168,254,.12);border:1px solid rgba(110,168,254,.22);color:var(--text);font-size:12px}
+    .chart{height:380px}
+    .chart.small{height:320px}
+    .divider{height:1px;background:rgba(34,48,95,.6);margin:10px 0}
+    .note{color:var(--muted);font-size:12px;line-height:1.45}
+    .muted{color:var(--muted)}
+    .err{margin-top:10px;color:#ffd5d5;background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.35);padding:10px;border-radius:12px;display:none;white-space:pre-wrap}
+    .hide{display:none !important}
+
+    /* DataTables theming */
+    table.dataTable{color:var(--text)!important}
+    .dataTables_wrapper .dataTables_filter input{color:var(--text)}
+    .dataTables_wrapper .dataTables_length select{color:var(--text)}
+    .dataTables_wrapper .dataTables_info,.dataTables_wrapper .dataTables_paginate{color:var(--muted)!important}
+    .dataTables_wrapper .dataTables_paginate .paginate_button{color:var(--text)!important}
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current{background:rgba(110,168,254,.25)!important;border:1px solid rgba(110,168,254,.35)!important}
+
+    @media (max-width: 920px){
+      .span-3,.span-4,.span-5,.span-6,.span-7,.span-8{grid-column:span 12}
+      input{min-width:220px}
+      select{min-width:220px}
+    }
+  </style>
 </head>
-
 <body>
-<div class="container">
+  <div class="wrap">
+    <div>
+      <h1>Dashboard: มูลค่าความเสียหายจากน้ำท่วม (ยา & เวชภัณฑ์)</h1>
+      <div class="sub" id="subtitle">กำลังโหลดข้อมูล…</div>
+      <div class="sub">* ถ้าไม่ขึ้น ให้ลองเปิด <span class="pill">data.json</span> ใน URL เดียวกันเพื่อเช็กว่าไฟล์ถูก deploy แล้ว</div>
+      <div id="loadError" class="err"></div>
+    </div>
 
-<h1>มูลค่าความเสียหายจากน้ำท่วม</h1>
-<p>แยกยา / เวชภัณฑ์ เพื่อการตัดสินใจระดับผู้บริหาร</p>
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tabBtn active" data-tab="drug">💊 ยา</div>
+      <div class="tabBtn" data-tab="supply">🧰 เวชภัณฑ์ (Supply)</div>
+      <div class="tabBtn" data-tab="all">📦 รวมทั้งหมด</div>
+    </div>
 
-<!-- Tabs -->
-<div class="tabs">
-  <div class="tab active" data-tab="drug">💊 ยา</div>
-  <div class="tab" data-tab="supply">🧰 เวชภัณฑ์</div>
-</div>
+    <!-- Controls (shared) -->
+    <div class="card">
+      <div class="controls">
+        <span class="pill" id="pillScope">Scope: All</span>
+        <select id="damageSelect" multiple size="4" title="เลือกประเภทความเสียหาย (multi-select)"></select>
+        <select id="unitSelect" multiple size="4" title="เลือกหน่วยนับ (multi-select)"></select>
+        <input id="searchBox" type="text" placeholder="ค้นหา: ชื่อ / รหัส / lot" />
+        <button class="btn" id="resetBtn">ล้างตัวกรอง</button>
+      </div>
+      <div class="note" style="margin-top:8px">Tip: คลิก Legend ในกราฟเพื่อซ่อน/แสดง series • คลิกแท่ง (bar) เพื่อกรองประเภทความเสียหาย</div>
+    </div>
 
-<!-- ================= TAB: DRUG ================= -->
-<div id="tab-drug">
+    <!-- TAB CONTENT: DRUG -->
+    <div id="tab-drug">
+      <div class="grid">
+        <div class="card kpi span-3">
+          <div class="label">มูลค่าความเสียหาย (ยา) ตามตัวกรอง</div>
+          <div class="value" id="kpiDrugTotal">—</div>
+          <div class="note" id="kpiDrugNote">—</div>
+        </div>
+        <div class="card kpi span-3">
+          <div class="label">จำนวนรายการ (ยา)</div>
+          <div class="value" id="kpiDrugRows">—</div>
+          <div class="note" id="kpiDrugRowsNote">—</div>
+        </div>
+        <div class="card kpi span-3">
+          <div class="label">จำนวนรหัสสินค้าไม่ซ้ำ (ยา)</div>
+          <div class="value" id="kpiDrugItems">—</div>
+          <div class="note">นับจาก item_code หลังกรอง</div>
+        </div>
+        <div class="card kpi span-3">
+          <div class="label">Filtered scope</div>
+          <div class="value" id="pillDrugFiltered">—</div>
+          <div class="note">แสดงผลตามตัวกรองด้านบน</div>
+        </div>
 
-  <div class="card">
-    <h2>📊 สรุปความเสียหายกลุ่มยา (ตามรายงานทางการ)</h2>
-    <table border="1" width="100%" cellpadding="6">
-      <thead>
-        <tr>
-          <th>Drug Group</th>
-          <th>GR</th>
-          <th>ตู้เย็นไม่ทำงาน</th>
-          <th>PHR น้ำท่วม</th>
-          <th>DSP น้ำท่วม</th>
-          <th>DXP น้ำท่วม</th>
-          <th>รวม</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td>INJECTION</td><td>17,334.01</td><td>2,249,355.16</td><td>1,433,402.59</td><td>535,191.03</td><td>21,494.89</td><td>4,256,777.68</td></tr>
-        <tr><td>TABLET</td><td>51,551.34</td><td>4,228.25</td><td>5,452,979.15</td><td>265,229.38</td><td>1,218.83</td><td>5,774,206.95</td></tr>
-        <tr><td>EXTERNAL USE</td><td>5,602.83</td><td>55,681.91</td><td>1,058,973.73</td><td>6,702.65</td><td>525.22</td><td>1,127,486.34</td></tr>
-        <tr style="font-weight:700;background:#1a244a">
-          <td>ยอดรวม</td>
-          <td>94,841.63</td>
-          <td>5,006,653.70</td>
-          <td>8,777,139.15</td>
-          <td>862,783.53</td>
-          <td>32,582.01</td>
-          <td>14,741,418.02</td>
-        </tr>
-      </tbody>
-    </table>
+        <div class="card span-12">
+          <div style="font-weight:750">ตารางสรุป (Drug Group × ประเภทความเสียหาย) — ใช้ตัวเลขตามรายงาน</div>
+          <div class="note">ตารางนี้เป็น “ตัวเลขอ้างอิงทางการ” เพื่อเสนอผู้บริหารให้ตรงกับเอกสารรายงาน</div>
+          <div class="divider"></div>
+          <div style="overflow:auto">
+            <table id="drugSummaryTable" style="width:100%; border-collapse:collapse;">
+              <thead>
+                <tr>
+                  <th style="text-align:left;padding:8px;border-bottom:1px solid rgba(34,48,95,.6)">Drug Group</th>
+                  <th style="text-align:right;padding:8px;border-bottom:1px solid rgba(34,48,95,.6)">รายการไม่ได้รับเข้า (GR)</th>
+                  <th style="text-align:right;padding:8px;border-bottom:1px solid rgba(34,48,95,.6)">รายการยาตู้เย็นไม่ทำงาน</th>
+                  <th style="text-align:right;padding:8px;border-bottom:1px solid rgba(34,48,95,.6)">รายการยา PHR น้ำท่วม</th>
+                  <th style="text-align:right;padding:8px;border-bottom:1px solid rgba(34,48,95,.6)">รายการใน DSP น้ำท่วม</th>
+                  <th style="text-align:right;padding:8px;border-bottom:1px solid rgba(34,48,95,.6)">รายการใน DXP น้ำท่วม</th>
+                  <th style="text-align:right;padding:8px;border-bottom:1px solid rgba(34,48,95,.6)">รวม</th>
+                </tr>
+              </thead>
+              <tbody id="drugSummaryBody"></tbody>
+              <tfoot id="drugSummaryFoot"></tfoot>
+            </table>
+          </div>
+        </div>
+
+        <div class="card span-6">
+          <div style="font-weight:750">มูลค่าตามประเภทความเสียหาย (ยา)</div>
+          <div class="note">คลิกแท่งเพื่อกรอง (toggle) • ใช้เพื่อดูภาพรวม “เหตุหลัก” ที่ทำให้เสียหาย</div>
+          <div id="drugBarDamage" class="chart"></div>
+        </div>
+
+        <div class="card span-6">
+          <div style="font-weight:750">Top 15 รายการมูลค่าสูงสุด (ยา)</div>
+          <div class="note">ใช้สำหรับตั้งมาตรการป้องกันซ้ำกับรายการมูลค่าสูง</div>
+          <div id="drugBarTop" class="chart"></div>
+        </div>
+
+        <div class="card span-6">
+          <div style="font-weight:750">Heatmap: Drug Group × ประเภทความเสียหาย (จากตารางสรุป)</div>
+          <div id="drugHeat" class="chart small"></div>
+        </div>
+
+        <div class="card span-6">
+          <div style="font-weight:750">Stacked Bar: สัดส่วนความเสียหายตาม Drug Group</div>
+          <div id="drugStack" class="chart small"></div>
+        </div>
+
+        <div class="card span-12">
+          <div style="font-weight:750">รายการละเอียด (ยา)</div>
+          <div class="note">ค้นหาเพิ่มเติมได้จากกล่อง Search ด้านบน</div>
+          <div class="divider"></div>
+          <table id="drugTable" class="display" style="width:100%"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB CONTENT: SUPPLY -->
+    <div id="tab-supply" class="hide">
+      <div class="grid">
+        <div class="card kpi span-3">
+          <div class="label">มูลค่าความเสียหาย (เวชภัณฑ์) ตามตัวกรอง</div>
+          <div class="value" id="kpiSupTotal">—</div>
+          <div class="note" id="kpiSupNote">—</div>
+        </div>
+        <div class="card kpi span-3">
+          <div class="label">จำนวนรายการ (เวชภัณฑ์)</div>
+          <div class="value" id="kpiSupRows">—</div>
+          <div class="note" id="kpiSupRowsNote">—</div>
+        </div>
+        <div class="card kpi span-3">
+          <div class="label">จำนวนรหัสสินค้าไม่ซ้ำ (เวชภัณฑ์)</div>
+          <div class="value" id="kpiSupItems">—</div>
+          <div class="note">นับจาก item_code หลังกรอง</div>
+        </div>
+        <div class="card kpi span-3">
+          <div class="label">Filtered scope</div>
+          <div class="value" id="pillSupFiltered">—</div>
+          <div class="note">แสดงผลตามตัวกรองด้านบน</div>
+        </div>
+
+        <div class="card span-6">
+          <div style="font-weight:750">มูลค่าตามประเภทความเสียหาย (เวชภัณฑ์)</div>
+          <div id="supBarDamage" class="chart"></div>
+        </div>
+        <div class="card span-6">
+          <div style="font-weight:750">Top 15 รายการมูลค่าสูงสุด (เวชภัณฑ์)</div>
+          <div id="supBarTop" class="chart"></div>
+        </div>
+
+        <div class="card span-12">
+          <div style="font-weight:750">รายการละเอียด (เวชภัณฑ์)</div>
+          <div class="divider"></div>
+          <table id="supTable" class="display" style="width:100%"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB CONTENT: ALL -->
+    <div id="tab-all" class="hide">
+      <div class="grid">
+        <div class="card kpi span-3">
+          <div class="label">มูลค่าความเสียหาย (รวม) ตามตัวกรอง</div>
+          <div class="value" id="kpiAllTotal">—</div>
+          <div class="note" id="kpiAllNote">—</div>
+        </div>
+        <div class="card kpi span-3">
+          <div class="label">จำนวนรายการ (รวม)</div>
+          <div class="value" id="kpiAllRows">—</div>
+          <div class="note" id="kpiAllRowsNote">—</div>
+        </div>
+        <div class="card kpi span-3">
+          <div class="label">จำนวนรหัสสินค้าไม่ซ้ำ (รวม)</div>
+          <div class="value" id="kpiAllItems">—</div>
+          <div class="note">นับจาก item_code หลังกรอง</div>
+        </div>
+        <div class="card kpi span-3">
+          <div class="label">Filtered scope</div>
+          <div class="value" id="pillAllFiltered">—</div>
+          <div class="note">แสดงผลตามตัวกรองด้านบน</div>
+        </div>
+
+        <div class="card span-6">
+          <div style="font-weight:750">มูลค่าตามประเภทความเสียหาย (รวม)</div>
+          <div id="allBarDamage" class="chart"></div>
+        </div>
+        <div class="card span-6">
+          <div style="font-weight:750">Top 15 รายการมูลค่าสูงสุด (รวม)</div>
+          <div id="allBarTop" class="chart"></div>
+        </div>
+
+        <div class="card span-12">
+          <div style="font-weight:750">รายการละเอียด (รวม)</div>
+          <div class="divider"></div>
+          <table id="allTable" class="display" style="width:100%"></table>
+        </div>
+      </div>
+    </div>
+
   </div>
-
-  <div class="card">
-    <h2>📋 รายการยาละเอียด</h2>
-    <table id="drugTable" class="display" width="100%"></table>
-  </div>
-
-</div>
-
-<!-- ================= TAB: SUPPLY ================= -->
-<div id="tab-supply" style="display:none">
-
-  <div class="card">
-    <h2>🧰 เวชภัณฑ์ที่ได้รับความเสียหาย</h2>
-    <table id="supplyTable" class="display" width="100%"></table>
-  </div>
-
-</div>
-
-</div>
 
 <script>
-let RAW;
+  const fmtTHB = (v)=> new Intl.NumberFormat('th-TH',{style:'currency',currency:'THB',maximumFractionDigits:2}).format(v||0);
+  const fmtInt = (v)=> new Intl.NumberFormat('th-TH').format(v||0);
 
-fetch('./data.json').then(r=>r.json()).then(j=>{
-  RAW=j;
+  // ========= Drug Summary fixed table (from user) =========
+  const DRUG_SUMMARY_ROWS = [
+    ["INJECTION", 17334.01, 2249355.16, 1433402.59, 535191.03, 21494.89],
+    ["SYRUP", 20353.46, 0.00, 347587.17, 1265.73, 533.07],
+    ["TABLET", 51551.34, 4228.25, 5452979.15, 265229.38, 1218.83],
+    ["EXTERNAL USE", 5602.83, 55681.91, 1058973.73, 6702.65, 525.22],
+    ["CYTOTOXIC INJECTION", 0.00, 58463.43, 5119.99, 0.00, 0.00],
+    ["FORMULAR", 0.00, 63.41, 1465.53, 200.12, 0.00],
+    ["IV FLUID", 0.00, 37519.82, 155031.16, 2936.75, 0.00],
+    ["REFRIGERATOR", 0.00, 2601341.72, 0.00, 5972.55, 5399.99],
+    ["CHEMICAL", 0.00, 0.00, 17656.97, 0.00, 0.00],
+    ["COSMETIC", 0.00, 0.00, 31857.86, 3172.30, 0.00],
+    ["DRUG SUPPLY", 0.00, 0.00, 30265.40, 0.00, 0.00],
+    ["HEMODIALYSIS", 0.00, 0.00, 55123.21, 28212.29, 0.00],
+    ["HIV", 0.00, 0.00, 374.64, 0.00, 0.00],
+    ["IMPLANT", 0.00, 0.00, 2999.21, 0.00, 0.00],
+    ["Medical Supply", 0.00, 0.00, 48516.99, 1498.00, 0.00],
+    ["MILK", 0.00, 0.00, 87115.23, 12402.74, 0.00],
+    ["NARCOTIC DRUG", 0.00, 0.00, 19481.21, 0.00, 0.00],
+    ["PACKAGE", 0.00, 0.00, 17629.97, 0.00, 0.00],
+    ["PSYCHOTIC DRUG", 0.00, 0.00, 11559.15, 0.00, 0.00],
+    ["Anti-Aging", 0.00, 0.00, 0.00, 0.00, 3410.01],
+  ];
+  const DRUG_SUMMARY_COLS = [
+    "รายการไม่ได้รับเข้า (GR)",
+    "รายการยาตู้เย็นไม่ทำงาน",
+    "รายการยา PHR น้ำท่วม",
+    "รายการใน DSP น้ำท่วม",
+    "รายการใน DXP น้ำท่วม"
+  ];
 
-  const drug = RAW.rows.filter(r=>r.category==="Drug");
-  const supply = RAW.rows.filter(r=>r.category==="Supply");
-
-  $('#drugTable').DataTable({
-    data:drug,
-    columns:[
-      {title:"Damage",data:"damage_type"},
-      {title:"Item",data:"item_name"},
-      {title:"Qty",data:"qty"},
-      {title:"Value",data:"total_value"}
-    ],
-    order:[[3,'desc']]
-  });
-
-  $('#supplyTable').DataTable({
-    data:supply,
-    columns:[
-      {title:"Damage",data:"damage_type"},
-      {title:"Item",data:"item_name"},
-      {title:"Qty",data:"qty"},
-      {title:"Value",data:"total_value"}
-    ],
-    order:[[3,'desc']]
-  });
-});
-
-// Tab switch
-document.querySelectorAll('.tab').forEach(t=>{
-  t.onclick=()=>{
-    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-    t.classList.add('active');
-    document.getElementById('tab-drug').style.display = t.dataset.tab==="drug"?"block":"none";
-    document.getElementById('tab-supply').style.display = t.dataset.tab==="supply"?"block":"none";
+  function renderDrugSummaryTable(){
+    const body = document.getElementById('drugSummaryBody');
+    const foot = document.getElementById('drugSummaryFoot');
+    body.innerHTML = '';
+    let totals = [0,0,0,0,0,0]; // 5 cols + row total
+    for(const r of DRUG_SUMMARY_ROWS){
+      const rowTotal = r.slice(1).reduce((a,b)=>a+b,0);
+      totals[5] += rowTotal;
+      for(let i=0;i<5;i++) totals[i]+=r[i+1];
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="padding:8px;border-bottom:1px solid rgba(34,48,95,.35)">${r[0]}</td>
+        ${r.slice(1).map(v=>`<td style="padding:8px;text-align:right;border-bottom:1px solid rgba(34,48,95,.35)">${v.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>`).join('')}
+        <td style="padding:8px;text-align:right;border-bottom:1px solid rgba(34,48,95,.35);font-weight:700">${rowTotal.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      `;
+      body.appendChild(tr);
+    }
+    // Foot totals (match user totals if possible)
+    foot.innerHTML = `
+      <tr style="font-weight:800;background:rgba(110,168,254,.10)">
+        <td style="padding:10px;border-top:1px solid rgba(34,48,95,.6)">ยอดรวม</td>
+        ${totals.slice(0,5).map(v=>`<td style="padding:10px;text-align:right;border-top:1px solid rgba(34,48,95,.6)">${v.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>`).join('')}
+        <td style="padding:10px;text-align:right;border-top:1px solid rgba(34,48,95,.6)">${totals[5].toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      </tr>
+    `;
   }
-});
-</script>
 
+  function renderDrugSummaryCharts(){
+    const groups = DRUG_SUMMARY_ROWS.map(r=>r[0]);
+    const cols = DRUG_SUMMARY_COLS;
+    const z = DRUG_SUMMARY_ROWS.map(r=>r.slice(1)); // 20 x 5
+
+    Plotly.newPlot('drugHeat', [{
+      type:'heatmap',
+      x: cols, y: groups, z,
+      hovertemplate:'%{y}<br>%{x}<br>%{z:,.2f} THB<extra></extra>',
+      colorbar:{tickformat:',.0f'}
+    }], {
+      margin:{l:160,r:20,t:10,b:90},
+      paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
+      font:{color:'#e9ecf8'},
+      xaxis:{tickangle:-20}
+    }, {displayModeBar:false,responsive:true});
+
+    const traces = cols.map((c, i)=>({
+      type:'bar', orientation:'h', name:c,
+      y: groups,
+      x: DRUG_SUMMARY_ROWS.map(r=>r[i+1]),
+      hovertemplate:`%{y}<br>${c}<br>%{x:,.2f} THB<extra></extra>`
+    }));
+    Plotly.newPlot('drugStack', traces, {
+      barmode:'stack',
+      margin:{l:160,r:20,t:10,b:40},
+      paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
+      font:{color:'#e9ecf8'},
+      xaxis:{tickformat:',.0f', gridcolor:'rgba(34,48,95,.35)'},
+      legend:{orientation:'h', y:1.15, x:0}
+    }, {displayModeBar:false,responsive:true});
+  }
+
+  // ========= Data handling =========
+  let RAW=null;
+  let ACTIVE_TAB='drug';
+
+  // shared filters
+  let FILTER={ damageTypes:new Set(), units:new Set(), q:"" };
+
+  function showError(msg){
+    const el = document.getElementById('loadError');
+    el.style.display = 'block';
+    el.textContent = msg;
+  }
+
+  async function fetchFirstAvailable(paths){
+    let lastErr=null;
+    for(const p of paths){
+      try{
+        const r = await fetch(p, {cache:"no-store"});
+        if(!r.ok) { lastErr = `HTTP ${r.status} for ${p}`; continue; }
+        return await r.json();
+      }catch(e){ lastErr = String(e); }
+    }
+    throw new Error(`Failed to load data.json. Tried:\n- ${paths.join('\n- ')}\n\nLast error: ${lastErr}`);
+  }
+
+  function classifyCategory(row){
+    // Prefer explicit category if provided
+    if(row.category) return row.category;
+
+    // Otherwise infer from source field (typical from our generator)
+    const s = String(row.source||'').toLowerCase();
+    if(s.includes('swt') || s.includes('เวชภัณฑ์') || s.includes('supply')) return 'Supply';
+
+    // Also infer by item_name keywords (fallback)
+    const n = String(row.item_name||'').toLowerCase();
+    if(n.includes('syringe') || n.includes('gauze') || n.includes('catheter')) return 'Supply';
+
+    return 'Drug';
+  }
+
+  function uniq(arr){ return Array.from(new Set(arr)); }
+
+  function applyFilter(rows){
+    const q = (FILTER.q||"").toLowerCase().trim();
+    return rows.filter(r=>{
+      if(FILTER.damageTypes.size && !FILTER.damageTypes.has(r.damage_type)) return false;
+      if(FILTER.units.size && !FILTER.units.has(r.unit)) return false;
+      if(q){
+        const hay = `${r.item_code||""} ${r.item_name||""} ${r.lot||""} ${r.source||""}`.toLowerCase();
+        if(!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }
+
+  function groupSum(rows, key){
+    const m = new Map();
+    for(const r of rows){
+      const k = r[key] ?? "(blank)";
+      m.set(k, (m.get(k)||0) + (r.total_value||0));
+    }
+    return Array.from(m.entries()).map(([k,v])=>({k,v})).sort((a,b)=>b.v-a.v);
+  }
+
+  function topNItems(rows, n=15){
+    const m = new Map();
+    for(const r of rows){
+      const k = `${r.item_name||"(no name)"} • ${r.item_code||""}`.trim();
+      m.set(k, (m.get(k)||0) + (r.total_value||0));
+    }
+    return Array.from(m.entries()).map(([k,v])=>({k,v})).sort((a,b)=>b.v-a.v).slice(0,n);
+  }
+
+  function renderBarDamage(elId, rows){
+    const g = groupSum(rows, "damage_type");
+    const x = g.map(d=>d.k);
+    const y = g.map(d=>d.v);
+    Plotly.newPlot(elId,[{
+      type:'bar', x, y,
+      hovertemplate:'%{x}<br>%{y:,.2f} THB<extra></extra>'
+    }],{
+      margin:{l:50,r:10,t:10,b:90},
+      paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
+      font:{color:'#e9ecf8'},
+      yaxis:{tickformat:',.0f', gridcolor:'rgba(34,48,95,.35)'},
+      xaxis:{tickangle:-25}
+    },{displayModeBar:false,responsive:true});
+
+    document.getElementById(elId).on('plotly_click', (ev)=>{
+      const dmg = ev.points?.[0]?.x;
+      if(!dmg) return;
+      if(FILTER.damageTypes.has(dmg)) FILTER.damageTypes.delete(dmg);
+      else FILTER.damageTypes.add(dmg);
+      syncControls();
+      rerender();
+    });
+  }
+
+  function renderBarTop(elId, rows){
+    const top = topNItems(rows, 15);
+    const x = top.map(d=>d.v).reverse();
+    const y = top.map(d=>d.k).reverse();
+    Plotly.newPlot(elId,[{
+      type:'bar', orientation:'h', x, y,
+      hovertemplate:'%{y}<br>%{x:,.2f} THB<extra></extra>'
+    }],{
+      margin:{l:240,r:10,t:10,b:40},
+      paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
+      font:{color:'#e9ecf8'},
+      xaxis:{tickformat:',.0f', gridcolor:'rgba(34,48,95,.35)'}
+    },{displayModeBar:false,responsive:true});
+  }
+
+  // DataTables
+  let DT_DRUG=null, DT_SUP=null, DT_ALL=null;
+  function renderTable(which, rows){
+    const columns = [
+      {title:"Category", data:"category"},
+      {title:"Damage Type", data:"damage_type"},
+      {title:"Source", data:"source"},
+      {title:"Item Code", data:"item_code"},
+      {title:"Item Name", data:"item_name"},
+      {title:"Lot", data:"lot"},
+      {title:"Exp", data:"exp"},
+      {title:"Qty", data:"qty", render:(d)=> fmtInt(d)},
+      {title:"Unit", data:"unit"},
+      {title:"Avg Cost", data:"avg_cost", render:(d)=> (d==null? "" : Number(d).toLocaleString('th-TH',{maximumFractionDigits:2}))},
+      {title:"Total (THB)", data:"total_value", render:(d)=> Number(d||0).toLocaleString('th-TH',{maximumFractionDigits:2})},
+    ];
+    const id = which==='drug' ? 'drugTable' : which==='supply' ? 'supTable' : 'allTable';
+    let dt = which==='drug' ? DT_DRUG : which==='supply' ? DT_SUP : DT_ALL;
+
+    if(dt){
+      dt.clear(); dt.rows.add(rows); dt.draw();
+      return;
+    }
+    dt = $(`#${id}`).DataTable({
+      data: rows,
+      columns,
+      pageLength: 10,
+      order: [[10,'desc']],
+      dom: 'lfrtip'
+    });
+    if(which==='drug') DT_DRUG=dt;
+    if(which==='supply') DT_SUP=dt;
+    if(which==='all') DT_ALL=dt;
+  }
+
+  function renderKPIs(prefix, allRows, filteredRows){
+    const totalFiltered = filteredRows.reduce((s,r)=>s+(r.total_value||0),0);
+    document.getElementById(`kpi${prefix}Total`).textContent = fmtTHB(totalFiltered);
+    document.getElementById(`kpi${prefix}Rows`).textContent = fmtInt(filteredRows.length);
+    document.getElementById(`kpi${prefix}RowsNote`).textContent = `จากทั้งหมด ${fmtInt(allRows.length)} rows`;
+    const distinct = new Set(filteredRows.map(r=>r.item_code).filter(Boolean)).size;
+    document.getElementById(`kpi${prefix}Items`).textContent = fmtInt(distinct);
+    document.getElementById(`pill${prefix}Filtered`).textContent = fmtInt(filteredRows.length);
+  }
+
+  function rerender(){
+    if(!RAW) return;
+
+    const rowsAll = RAW.rows;
+
+    const rowsDrugAll = rowsAll.filter(r=>r.category==='Drug');
+    const rowsSupAll  = rowsAll.filter(r=>r.category==='Supply');
+
+    const filteredAll = applyFilter(rowsAll);
+    const filteredDrug = applyFilter(rowsDrugAll);
+    const filteredSup  = applyFilter(rowsSupAll);
+
+    // Scope pill
+    const parts=[];
+    if(FILTER.damageTypes.size) parts.push(`${FILTER.damageTypes.size} damage type`);
+    if(FILTER.units.size) parts.push(`${FILTER.units.size} unit`);
+    if((FILTER.q||'').trim()) parts.push('search');
+    document.getElementById('pillScope').textContent = parts.length ? `Scope: ${parts.join(' • ')}` : 'Scope: All';
+
+    // KPIs
+    renderKPIs('Drug', rowsDrugAll, filteredDrug);
+    document.getElementById('kpiDrugNote').textContent = `รวมทั้งสิ้น (ยา) = ${fmtTHB(rowsDrugAll.reduce((s,r)=>s+(r.total_value||0),0))}`;
+
+    renderKPIs('Sup', rowsSupAll, filteredSup);
+    document.getElementById('kpiSupNote').textContent = `รวมทั้งสิ้น (Supply) = ${fmtTHB(rowsSupAll.reduce((s,r)=>s+(r.total_value||0),0))}`;
+
+    renderKPIs('All', rowsAll, filteredAll);
+    document.getElementById('kpiAllNote').textContent = `รวมทั้งสิ้น (All) = ${fmtTHB(rowsAll.reduce((s,r)=>s+(r.total_value||0),0))}`;
+
+    // Charts
+    renderBarDamage('drugBarDamage', filteredDrug);
+    renderBarTop('drugBarTop', filteredDrug);
+
+    renderBarDamage('supBarDamage', filteredSup);
+    renderBarTop('supBarTop', filteredSup);
+
+    renderBarDamage('allBarDamage', filteredAll);
+    renderBarTop('allBarTop', filteredAll);
+
+    // Tables
+    renderTable('drug', filteredDrug);
+    renderTable('supply', filteredSup);
+    renderTable('all', filteredAll);
+  }
+
+  function syncControls(){
+    const dmgSel = document.getElementById('damageSelect');
+    for(const opt of dmgSel.options) opt.selected = FILTER.damageTypes.has(opt.value);
+    const unitSel = document.getElementById('unitSelect');
+    for(const opt of unitSel.options) opt.selected = FILTER.units.has(opt.value);
+    document.getElementById('searchBox').value = FILTER.q || "";
+  }
+
+  function initControls(){
+    const dmgSel = document.getElementById('damageSelect');
+    const unitSel = document.getElementById('unitSelect');
+
+    const dmgList = uniq(RAW.rows.map(r=>r.damage_type).filter(Boolean)).sort();
+    dmgSel.innerHTML = dmgList.map(d=>`<option value="${d}">${d}</option>`).join('');
+
+    const unitList = uniq(RAW.rows.map(r=>r.unit).filter(Boolean)).sort();
+    unitSel.innerHTML = unitList.map(u=>`<option value="${u}">${u}</option>`).join('');
+
+    dmgSel.addEventListener('change', ()=>{
+      FILTER.damageTypes = new Set(Array.from(dmgSel.selectedOptions).map(o=>o.value));
+      rerender();
+    });
+    unitSel.addEventListener('change', ()=>{
+      FILTER.units = new Set(Array.from(unitSel.selectedOptions).map(o=>o.value));
+      rerender();
+    });
+    document.getElementById('searchBox').addEventListener('input', (e)=>{
+      FILTER.q = e.target.value || "";
+      rerender();
+    });
+    document.getElementById('resetBtn').addEventListener('click', ()=>{
+      FILTER.damageTypes = new Set();
+      FILTER.units = new Set();
+      FILTER.q = "";
+      syncControls();
+      rerender();
+    });
+  }
+
+  function setSubtitle(){
+    const dt = new Date();
+    document.getElementById('subtitle').textContent = `อัปเดตหน้าเว็บ: ${dt.toLocaleString('th-TH')} • เปิดได้บน GitHub Pages / Netlify`;
+  }
+
+  function initTabs(){
+    document.querySelectorAll('.tabBtn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        document.querySelectorAll('.tabBtn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        ACTIVE_TAB = btn.dataset.tab;
+        document.getElementById('tab-drug').classList.toggle('hide', ACTIVE_TAB!=='drug');
+        document.getElementById('tab-supply').classList.toggle('hide', ACTIVE_TAB!=='supply');
+        document.getElementById('tab-all').classList.toggle('hide', ACTIVE_TAB!=='all');
+        // force plotly to resize nicely when switching tabs
+        setTimeout(()=>Plotly.Plots.resize('drugBarDamage'), 30);
+      });
+    });
+  }
+
+  async function boot(){
+    try{
+      setSubtitle();
+      renderDrugSummaryTable();
+      renderDrugSummaryCharts();
+      initTabs();
+
+      const json = await fetchFirstAvailable(['./data.json','data.json','/data.json']);
+      // normalize
+      const rows = (json.rows || json.data || []);
+      RAW = { rows: rows.map(r=>({
+        category: classifyCategory(r),
+        damage_type: r.damage_type || r.damage || r.type || "",
+        source: r.source || r.sheet || "",
+        item_code: r.item_code || r.code || "",
+        item_name: r.item_name || r.name || "",
+        lot: r.lot || "",
+        exp: r.exp || r.expiry || "",
+        qty: Number(r.qty ?? r.quantity ?? 0) || 0,
+        unit: r.unit || "",
+        avg_cost: (r.avg_cost==null? null : Number(r.avg_cost)),
+        total_value: Number(r.total_value ?? r.value ?? r.total ?? 0) || 0
+      }))};
+
+      initControls();
+      syncControls();
+      rerender();
+    }catch(e){
+      showError(String(e));
+    }
+  }
+  boot();
+</script>
 </body>
 </html>
